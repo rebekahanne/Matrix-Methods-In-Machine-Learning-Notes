@@ -1,0 +1,392 @@
+\documentclass[12pt]{article}
+\usepackage{amsfonts, amsmath}
+\usepackage{amssymb, geometry}
+\usepackage{scalefnt}
+\usepackage{setspace}
+\usepackage{color,hyperref}
+%\usepackage{epsfig,subfigure,morefloats}
+\usepackage{natbib}
+\usepackage{dsfont}
+\usepackage{color,hyperref}
+\usepackage{epstopdf}
+\usepackage{amsthm}
+\usepackage{amssymb}
+%\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{booktabs,siunitx}
+\usepackage{bm}
+\usepackage[section]{placeins}
+%\usepackage{hypcap}
+\usepackage{afterpage}
+
+
+\setcounter{MaxMatrixCols}{10}
+
+\providecommand{\u}[1]{\protect\rule{.1in}{.1in}}
+\providecommand{\u}[1]{\protect\rule{.1in}{.1in}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+%\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{corollary}{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}{Definition}
+\theoremstyle{definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}{Exercise}
+\newtheorem{lemma}{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+\geometry{left=1in,right=1in,top=1in,bottom=1in}
+%\newenvironment{proof}[1][Proof]{\noindent\textbf{#1.} }{\ \rule{0.5em}{0.5em}}
+%\hypersetup{pdftex,colorlinks=true,allcolors=black,citecolor=black}
+
+\usepackage{floatrow}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}
+\usepackage{indentfirst}
+
+\algnewcommand\algorithmicforeach{\textbf{for each}}
+\algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicdo}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+%\graphicspath{{./Simulation_Graphs/}}
+
+\usepackage{listings}
+\usepackage{subcaption} 
+\usepackage[toc,page]{appendix}
+%\usepackage[extendedchars]{grffile}
+
+\usepackage{mathpazo} % math & rm
+\linespread{1.05}        % Palatino needs more leading (space between lines)
+\usepackage[scaled]{helvet} % ss
+\usepackage{courier} % tt
+\normalfont
+\usepackage[T1]{fontenc}
+
+%% Math commands
+\newcommand{\e}{\epsilon}
+%\newcommand{\d}{\delta}
+\newcommand{\D}{\Delta}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\usepackage{mathtools}
+\DeclarePairedDelimiterX{\inp}[2]{\langle}{\rangle}{#1, #2}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand*{\vertbar}{\rule[-1ex]{0.5pt}{2.5ex}}
+\newcommand*{\horzbar}{\rule[.5ex]{2.5ex}{0.5pt}}
+\usepackage{mathrsfs}
+
+
+\title{Matrix Methods in Machine Learning \\ Lecture Notes}
+\author{Rebekah Dix}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage 
+
+\section{Elements of Machine Learning}
+\begin{enumerate}
+	\item Collect data
+	\item Preprocessing: changing data to simplify subsequent operations without losing relevant information.
+	\item Feature extraction: reduce raw data by extracting features or properties relevant to the model.
+	\item Generate training samples: a large collection of examples we can use to learn the model.
+	\item Loss function: To learn the model, we choose a loss function (i.e. a measure of how well a model fits the data)
+	\item Learn the model: Search over a collection of candidate models or model parameters to find one that minimizes the loss on training data.
+	\item Characterize generalization error (the error of our predictions on new data that was not used for training).
+\end{enumerate}
+
+\section{Linear Algebra Review}
+
+\subsection{Products}
+Inner products:
+\begin{equation}
+	\inp{x}{w} = \sum_{j=1}^p w_j x_j = x^T w = w^T x
+\end{equation}
+Thus this inner product is a weighted sum of the elements of $x$.
+
+Matrix-vector multiplication:
+\begin{equation}
+	Xw = 
+	\begin{bmatrix}
+	\horzbar x_1^T \horzbar \\
+	\horzbar x_2^T \horzbar \\
+	\vdots \\
+	\horzbar x_n^T \horzbar
+	\end{bmatrix}
+	w
+	=
+	\begin{bmatrix}
+	x_1^T w \\
+	x_2^T w \\
+	\vdots \\
+	x_n^T w \\
+	\end{bmatrix}
+\end{equation}
+
+Matrix-matrix multiplication:
+
+\begin{example}
+Let $X \in \R^{n \times p}$, $n$ movies, $p$ people. $T \in \R^{n \times r}$, and $W \in \R^{r \times p}$. We can think of $T$ as the taste profiles of $r$ representative customers and $W$ as the weights on each representative profile (there will be one set of weights for each customer). Suppose we have two representative taste profiles (i.e. an action lover and a romance lover). Then $w$ will be a $2$-vector containing the weights of on the two representative taste profiles. Then $Tw$ is the expected preferences of a customer who weights the representative taste profiles of $T$ with the weights given in $w$. 
+\end{example}
+
+Now we can think about the full matrix product $X = TW$
+\begin{equation}
+	X = TW \implies X_{ij} = \inp{i\text{th row of T}}{j\text{th column of W}}
+\end{equation}
+
+\begin{itemize}
+	\item The $j$th column of $X$ is a weighted sum of the columns of $T$, where the $j$th column of $W$ tells us the weights.
+	\begin{equation}
+		x_j = T w_j 
+	\end{equation}
+	That is, the tastes (preferences) of the $j$th customer.
+	\item The $i$th row of $X$ is $x_i^T = t_i^T W$ where $t_i^T$ is the $i$th row of $T$. This gives us how much each customer likes movie $i$. 
+\end{itemize}
+
+Inner product representation:
+\begin{equation}
+	TW = 
+	\begin{bmatrix}
+	\horzbar t_1^T \horzbar \\
+	\horzbar t_2^T \horzbar \\
+	\vdots \\
+	\horzbar t_n^T \horzbar	
+	\end{bmatrix}
+	\begin{bmatrix}
+	\vertbar & \vertbar & & \vertbar\\
+	w_1 & w_2 & \ldots & w_p \\
+	\vertbar & \vertbar & & \vertbar\\	
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+	t_1^Tw_1 & t_1^Tw_2 & \hdots & t_1^Tw_p \\
+	t_2^Tw_1 & \ddots & & \vdots\\
+	\vdots & & \ddots & \vdots \\
+	t_n^Tw_1 & & & t_n^Tw_p
+	\end{bmatrix}
+\end{equation}
+
+Outer Product Representation:
+\begin{equation}
+	TW = 
+	\begin{bmatrix}
+	\vertbar & \vertbar & & \vertbar\\
+	T_1 & T_2 & \ldots & T_r \\
+	\vertbar & \vertbar & & \vertbar\\	
+	\end{bmatrix}
+	\begin{bmatrix}
+	\horzbar w_1^T \horzbar \\
+	\horzbar w_2^T \horzbar \\
+	\vdots \\
+	\horzbar w_r^T \horzbar	
+	\end{bmatrix}
+	= \sum_{k=1}^r T_k w_k^T
+\end{equation}
+(the sum of rank $1$ matrices. $TW$ has rank $r$ if and only if the columns of $T$ are rows of $W$ are linearly independent). In this representation, we can think about $T_k$ as the $k$th representative taste profile and $w^T_k$ as the $k$th row of $W$, or the affinity of each customer with the $k$th representative profile. 
+
+\subsection{Linear Independence}
+\begin{definition}(Linear Independence)
+Vectors $v_1, v_2, \ldots, v_n \in \R^p$ are linearly independent vectors if and only if
+\begin{equation}
+	\sum_{j=1}^n \alpha_j v_j = 0 \iff \alpha_j = 0, j=1,\ldots,n
+\end{equation}	
+\end{definition}
+
+\begin{definition}(Matrix rank)
+The rank of a matrix is the maximum number of linearly independent columns. The rank of a matrix is less than the smallest dimension of the matrix. 
+\end{definition}
+
+
+\section{Linear Systems and Vector Norms}
+
+
+\section{Least Squares}
+\subsection{Vector Calculus Approach}
+\subsubsection{Review of Vector Calculus}
+Let $w$ be a $p$-vector and let $f$ be a function of $w$ that maps $\R^p$ to $\R$. Then the gradient of $f$ with respect to $w$ is
+\begin{equation}
+	\nabla_w f(w) = \begin{pmatrix} \frac{\partial f(w)}{\partial w_1} \\ \vdots \\ \frac{\partial f(w)}{\partial w_p} \end{pmatrix}
+\end{equation}
+
+\begin{example}(Gradient of an Inner Product)
+Let $f(w) = \inp{a}{w} = w^T a = \sum_{i=1}^n w_i a_i$. Then
+\begin{equation}
+	\nabla_w w^T a = \begin{pmatrix} a_1 \\ a_2 \\ \vdots \\ a_p \end{pmatrix} = a
+\end{equation}
+\end{example}
+
+\begin{example}(Gradient of an Inner Product, Squared)
+Let $f(w) = \norm{w}^2 = w^T w = w_1^2 + \cdots + w_p^2$. Then 
+\begin{equation}
+	\nabla_w w^T w = \begin{pmatrix} 2w_1 \\ 2w_2 \\ \vdots \\ 2w_p \end{pmatrix} = 2w
+\end{equation}
+(This is a special case of the Quadratic Form discussed below, where $w^TQw$, and $Q=I$)
+\end{example}
+
+\begin{example}(Gradient of a Quadratic Form)
+Let $x \in \R^n$ and $f(x) = x^T Q x$, where $Q$ is symmetric (if $Q$ isn't symmetric we could replace $Q$ with $\frac{1}{2}(Q + Q^T)$).
+Then
+\begin{align*}
+	f(x) &= x^T Q x \\
+	&= \sum_{i=1}^n \sum_{j=1}^n x_i Q_{ij}x_j
+\end{align*}
+Therefore
+\begin{equation}
+	[\nabla_x f]_k = \frac{d f}{d x_k} = \begin{cases}
+	2 Q_{kk} x_k & i=j=k \\
+	Q_{kj} x_j & i =k, i \neq j \\
+	Q_{ik} x_i & j = k, j \neq i
+	\end{cases}
+\end{equation}
+Therefore
+\begin{equation}
+	\nabla_x f = (Q + Q^T) x 
+\end{equation}
+If $Q$ is symmetric, then this equals $2Qx$.
+\end{example}
+
+\subsubsection{Application to Least Squares}
+Let $f(w) = \norm{y - Xw}_2^2$. Then the least squares problem is 
+\begin{equation}
+	\hat{w} = \argmin_w f(w)
+\end{equation}
+We can expand $f(w)$ as
+\begin{align*}
+	f(w) &= (y - Xw)^T(y - Xw) \\
+	&= y^T y - y^T X w - w^T X^T y + w^T X^T X w \\
+	&= y^T y - 2 w^T X^T y + w^T X^T X w
+\end{align*}
+Then
+\begin{align*}
+	\nabla_w f(w) = -2 X^T y + 2 X^T X w
+\end{align*}
+At an optimum we have that $\hat{w}$ solves $X^T y = X^T X w$. Then if $(X^T X)^{-1}$ exists, we have that
+\begin{equation}
+	\hat{w} = (X^T X)^{-1} X^T y
+\end{equation}
+
+\begin{theorem}(Sufficient Condition for Existence/Uniqueness of LS Solution)
+If the columns of $X$ are linearly independent, then $X^T X$ is non-singular, and there exists a unique least squares solution $\hat{w} = (X^T X)^{-1} X^T y$.
+\end{theorem}
+
+\subsection{Positive Definite Matrices}
+\begin{definition}[Positive Definite, pd]
+A matrix $Q$ ($n \times n$) is positive definite (written $Q \succ 0$) if $x^T Q x > 0$ for all $x \in \R^n$, $x \neq 0$. 
+\end{definition}
+
+\begin{definition}[Positive Semi-Definite, psd]
+A matrix $Q$ ($n \times n$) is positive semi-definite (written $Q \succeq 0$) if $x^T Q x \geq 0$ for all $x \in \R^n$, $x \neq 0$. 
+\end{definition}
+
+Properties of Positive Definite matrices:
+\begin{enumerate}
+	\item If $P \succ 0$ and $Q \succ 0$, then $P+Q \succ 0$.
+	\item If $P \succ 0$ and $\alpha > 0$, then $\alpha P \succ 0$.
+	\item For any matrix $A$, $A^T A \succeq 0$ and $AA^T \succeq 0$. Further, if the columns of $A$ are linearly independent, then $A^T A \succ 0$.
+	\item If $A \succ 0$, then $A^{-1}$ exists.
+	\item Notation: $A \succ B$ means $A - B \succ 0$.
+\end{enumerate}
+
+
+\begin{example}
+Let
+\begin{equation}
+	X = 
+	\begin{pmatrix}
+	1 & 1 \\
+	1 & 1 \\
+	1 & 1
+	\end{pmatrix}
+\end{equation}
+Then 
+\begin{equation}
+	X^T X = 
+	\begin{pmatrix}
+	3 & 3 \\
+	3 & 3
+	\end{pmatrix}
+\end{equation}
+Consider the vector $a = \begin{pmatrix} 1 \\ -1 \end{pmatrix}$. Then $a^T X^T X a = 0$. Therefore $X^T X$ is not positive definite. 
+\end{example}	
+
+\subsection{Subspaces}
+\begin{definition}(Subspace)
+A set of points $S \subseteq \R^n$ is a subspace if
+\begin{enumerate}
+	\item $0 \in S$ ($S$ contains the origin)
+	\item If $x,y \in S$, then $x + y \in S$
+	\item If $x \in S$, $\alpha \in \R$, then $\alpha x \in S$.
+\end{enumerate}
+\end{definition}
+
+\subsection{Least Squares with Orthonormal Basis for Subspace}
+
+\section{Least Squares Classification}
+We are given a training sample $\{x_i, y_i \}_{i=1}^n$, $x_i \in \R^p$ and $y\in \R$ (or $y \in \{+1,-1\}$).
+
+\begin{definition}(Linear Predictor)
+We have a linear predictor if each label is a linear combination of the features i.e. we can find weights $\{w_i\}_{i=1}^{p}$ such that
+\begin{equation}
+y_i = w_1 x_{i1} + w_2 x_{i2} + \ldots w_p x_{ip}
+\end{equation}
+In words, this says the label for observation $i$ is a linear combination of the features for example $i$. 
+\end{definition}
+
+The steps to complete least squares classification in this environment are as follows:
+\begin{enumerate}
+	\item Build a data matrix or feature matrix and label vector
+	\begin{equation}
+		X = 
+		\begin{bmatrix}
+		\horzbar x_1^T \horzbar \\
+		\horzbar x_2^T \horzbar \\
+		\vdots \\
+		\horzbar x_n^T \horzbar
+		\end{bmatrix} =
+		\begin{bmatrix}
+		x_1^T & 1 \\
+		x_2^T & 1 \\
+		\vdots \\
+		x_n^T & 1
+		\end{bmatrix}
+		\in \R^{n \times p},
+		\quad
+		y = 
+		\begin{bmatrix}
+		y_1 \\
+		y_2 \\
+		\vdots \\
+		y_n
+		\end{bmatrix}
+	\end{equation}
+	The linear model is then $\hat{y} = Xw$.
+	\item Solve a least squares optimization problem 
+	\begin{equation}
+	 	\hat{w} = \argmin_w \norm{y - Xw}_2^2 = \argmin_w \sum_{i=1}^n (y_i- x_i^T w)^2
+	 \end{equation} 
+	 (this last equality makes it clear that we are minimizing the sum of squared residuals). If the columns of $X$ are linearly independent, then $X^T X$ is positive definite. Therefore $X^T X$ is invertible. In sum, if $X^T X$ is positive definite, then there exists a unique LS solution 
+	 \begin{equation}
+	 	\hat{w} = (X^T X)^{-1} X^T y
+	 \end{equation}
+	 The predicted labels are
+	 \begin{align*}
+	 \hat{y} &= Xw \\
+	 &= X (X^T X)^{-1} X^T y
+	 \end{align*}
+\end{enumerate}
+
+\subsection{Regularization}
+\end{document}

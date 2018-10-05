@@ -212,8 +212,128 @@ The rank of a matrix is the maximum number of linearly independent columns. The 
 
 \section{Linear Systems and Vector Norms}
 
+\begin{example}(Condition on $rank(A)$ for existence of exact solution)
+
+Consider the linear system of equations $Ax = b$. This means that $b$ is a weighted sum of the columns of $A$. Suppose $A$ is full rank. Now consider the matrix $\begin{bmatrix} A & b\end{bmatrix}$. If the rank of $\begin{bmatrix} A & b\end{bmatrix}$ were \textit{greater} than the rank of $A$ (since the number of columns of the matrix increased by $1$ and $A$ is assumed full rank, this would imply the rank is $rank(A) + 1$), this would mean that $b$ could not be written as a linear combination of the columns of $A$, and that the system would not have an exact solution. Therefore, we must have that $rank (\begin{bmatrix} A & b\end{bmatrix}) = rank(A)$ in order for the system $Ax = b$ to have an exact solution. 
+
+To see how the definition of linear independence applies here, observe that $Ax = b \implies Ax - b = 0$. Therefore
+\begin{equation}
+	\begin{bmatrix}
+	A & b
+	\end{bmatrix}
+	\begin{bmatrix}
+	x \\
+	-1
+	\end{bmatrix}
+	=
+	0
+\end{equation}
+Thus, if $Ax = b$ has an exact solution, then $\begin{bmatrix} A & b\end{bmatrix}$ does not have linearly independent columns. 
+\end{example}
+
+\begin{example}(Condition on $rank(A)$ for more than one exact solution)
+
+If the system of linear equations $Ax = b$ has more than one exact solution, then there is at least one non zero vector $w$ for which $x+w$ is also a solution. That is, $A(x + w) = b$. If $x$ is an exact solution, then $Ax = b$. This implies $Aw = 0$. Therefore, the columns of $A$ are linearly dependent. Thus, if $rank(A) < dim(x)$, then there will be more than one exact solution. 
+\end{example}
+
+\begin{example}(Apply the above conditions)
+Let
+\begin{equation}
+	A = 
+	\begin{bmatrix}
+	1 & -2 \\
+	-1 & 2 \\
+	-2 & 4
+	\end{bmatrix},
+	\quad
+	b = 
+	\begin{bmatrix}
+	2 \\ -2 \\ -4
+	\end{bmatrix}
+\end{equation}
+We want to solve $Ax = b$. 
+\begin{itemize}
+	\item This system has an exact solution, since $rank(A) = rank(\begin{bmatrix} A & b\end{bmatrix})$. This follows since the columns of $A$ are linearly dependent, so it has rank $1$, and $b$ is a multiple of the columns of $A$, so the rank of $\begin{bmatrix} A & b\end{bmatrix}$ is also 1. 
+	\item Note that $1 = rank(A) < dim(x) = 2$. Therefore this system does not have a unique solution. 
+\end{itemize}
+\end{example}
+
+\subsection{Vector Norms}
+
+\begin{definition}(Vector Norm)
+A vector norm is a function $\norm{\cdot}$ mapping from $\R^n \to \R$ with the following properties. 
+\begin{enumerate}
+	\item $\norm{x} \geq 0$ for all $x \in \R^n$.
+	\item $\norm{x} = 0$ if and only if $x = 0$. 
+	\item $\norm{\alpha x} = |\alpha|\norm{x}$ for all $\alpha \in \R$, $x \in \R^n$. 
+	\item $\norm{x + y} \leq \norm{x} + \norm{y}$ for all $x, y \in \R^n$. 
+\end{enumerate}
+\end{definition}
+
+Helpful fact: $\norm{x}_{q'} \leq \norm{x}_q$ if $1 \leq q \leq q' \leq \infty$. 
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.5]{norm_ball.png}
+	\end{center}
+	\caption{The $l_p$ norm in $\R^2$}
+\end{figure}
 
 \section{Least Squares}
+We are given:
+\begin{enumerate}
+	\item Vector of labels $y \in \R^n$ 
+	\item Matrix of features $X \in \R^{n \times p}$
+\end{enumerate}
+
+We want to find:
+\begin{enumerate}
+	\item Vector of weights $w \in \R^p$
+\end{enumerate}
+
+Assumptions:
+\begin{enumerate}
+	\item $n \geq p$, and $rank(X) = p$. 
+\end{enumerate}
+
+If $y = Xw$, then we have a system of $n$ linear equations, where the $i$th equation is
+\begin{equation}
+	y_i = w_1 x_{i1} + w_2 x_{i2} + \cdots + w_p x_{ip} = \sum_{j=1}^p w_j x_{ij} = \inp{w}{x_{\cdot i}}
+\end{equation}
+where $x_{\cdot i}$ is the $i$th row of $X$. 
+
+In general, $y \neq Xw$ for any $w$. We define a residual $r_i = y_i - \inp{w}{x_{\cdot i}}$. Our goal is then to find $w$
+$\sum_{i=1}^n |r_i|^2$ (the sum of square residuals/errors). 
+
+Why should we minimize the sum of square errors?
+\begin{enumerate}
+	\item Magnifies the effect of large errors
+	\item Allows us to compute derivatives
+	\item Simple geometric interpretation
+	\item Coincides with modeling $y = Xw + \e$, where $\e $ is Gaussian noise
+\end{enumerate}
+
+\subsection{Geometric Approach}
+
+We know $\hat r = y - X \hat w$ is orthogonal to the span of the columns of $X$. Thus $x_i^T \hat r = 0$, or $X^T \hat r = 0$. This implies $X^T (y - X \hat w) = 0$. Thus $\hat w$ is a solution to the linear system of equations
+\begin{equation}
+	X^T X \hat w = X^T y
+\end{equation}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.1]{ls_geometry.png}
+	\end{center}
+	\caption{Geometry of LS in $\R^2$}
+\end{figure}
+
+Observations:
+\begin{itemize}
+	\item The question we're trying to answer: What is the point in $X$ that has the shortest distance to $y$? In $\R^2$, what are the weights $\beta_1$ and $\beta_2$ such that $\beta_1 x_1 + \beta_2 x_2$ has the shortest distance to $y$?
+	\item $col X$ is the space of all vectors that can be written as $\alpha x_1 + \beta x_2$ for some $\alpha, \beta \in \R$, that is the span of the columns of $X$. $y$ may not lie in this space. 
+	\item The residual vector will form a right angle with $col X$, because any other angle would correspond to a longer distance. 
+\end{itemize}
+
 \subsection{Vector Calculus Approach}
 \subsubsection{Review of Vector Calculus}
 Let $w$ be a $p$-vector and let $f$ be a function of $w$ that maps $\R^p$ to $\R$. Then the gradient of $f$ with respect to $w$ is
@@ -282,6 +402,10 @@ At an optimum we have that $\hat{w}$ solves $X^T y = X^T X w$. Then if $(X^T X)^
 If the columns of $X$ are linearly independent, then $X^T X$ is non-singular, and there exists a unique least squares solution $\hat{w} = (X^T X)^{-1} X^T y$.
 \end{theorem}
 
+\begin{proof}
+
+\end{proof}
+
 \subsection{Positive Definite Matrices}
 \begin{definition}[Positive Definite, pd]
 A matrix $Q$ ($n \times n$) is positive definite (written $Q \succ 0$) if $x^T Q x > 0$ for all $x \in \R^n$, $x \neq 0$. 
@@ -333,6 +457,91 @@ A set of points $S \subseteq \R^n$ is a subspace if
 \end{definition}
 
 \subsection{Least Squares with Orthonormal Basis for Subspace}
+Suppose are given a training sample $\{x_i, y_i \}_{i=1}^n$, $x_i \in \R^p$ and $y\in \R$. If the columns of $X$ (the data matrix) are linearly dependent, then $X^TX$ is not invertible. It is then impossible to tell which features are significant predictors of $y$. 
+
+Given $X = \begin{bmatrix} x_1 \ldots x_p \end{bmatrix}$, the following are options to represent the corresponding subspace spanned by the columns of $X$: 
+\begin{enumerate}
+	\item  Use $X$, but then $LS$ can be hard to interpret.
+	\item Use an orthonormal basis for the subspace.
+\end{enumerate}
+
+\subsubsection{Orthogonal Matrices and Orthonormal Basis}
+
+\begin{definition}(Orthonormal basis for $X$)
+An orthonormal basis for the columns of $X$ is a collection of vectors $\{u_1, \ldots, u_r \}$ such that the span of the columns of $X$ equals the span of $\{u_1, \ldots, u_r \}$. That is, $span(\{x_1, \ldots, x_p\}) = span(\{u_1, \ldots, u_r \})$. Furthermore, 
+\begin{equation}
+	u_i^T u_j = 
+	\begin{cases}
+	0 & i\neq j \\
+	1 & i = j
+	\end{cases}
+\end{equation}
+That is, the $u$ vectors are orthogonal and have norm $1$. 
+\end{definition}
+
+Observations:
+\begin{itemize}
+	\item The rank $r$ of the subspace must satisfy $r \leq \min{(n,p)}$. $r$ is the number of linearly independent columns of $X$. 
+	\item We can place the basis vectors into a basis matrix $U \in \R^{n \times r}$. 
+\end{itemize}
+
+\begin{claim}(Properties of orthogonal (basis) matrices)
+Let $U \in \R^{n \times r}$ be an orthogonal (basis) matrix.   
+\begin{enumerate}
+	\item $U^T U = I$
+	\item If $U$ and $V$ are both orthogonal, then $UV$ is also orthogonal.
+	\item $U$ is length preserving: $\norm{Uv}_2 = \norm{v}_2$ for $v \in \R^n$.
+\end{enumerate}
+\end{claim}
+\begin{proof}
+We prove each item as follows:
+\begin{enumerate}
+	\item We can easily see this from the inner product interpretation of matrix multiplication.
+	\item $(UV)^T UV = V^T U^T U V = V^T V = I$. 
+	\item $\norm{Uv}^2_2 = (Uv)^T Uv = v^T U^T U v = v^T v = \norm{v}^2_2$.
+\end{enumerate}
+\end{proof}
+
+\subsubsection{Back to LS}
+
+Suppose $U$ is an orthonormal basis matrix for our data matrix $X$. Then, the least-squares problem is 
+\begin{equation}
+	\hat v = \argmin_v \norm{y - Uv}^2_2
+\end{equation}
+We need $\hat v$ to satisfy $U^T U \hat v = U^T y$. Thus, $\hat v = U^T y$. 
+
+\subsubsection{Gram-Schmidt Orthogonalization Algorithm}
+
+How can we take $X$ and get an orthonormal basis $U$?
+
+
+\begin{enumerate}
+	\item Input $X = \begin{bmatrix} x_1 \ldots x_p \end{bmatrix} \in \R^{n \times p}$ 
+
+	Output: $U = \begin{bmatrix} u_1 \ldots u_r \end{bmatrix} \in \R^{n \times r}$
+
+	where $r = rank(X) \leq \min(n,p)$
+
+	\item Initialize $u_1 = \frac{x_1}{\norm{x_1}_2}$
+	\item For $j=2,3, \ldots, p$
+	
+	$x'_j = $ all the components of $x_j$ not represented by $u_1, \ldots, u_{j-1}$. 
+	\begin{equation}
+		x'_j = x_j - \sum_{i=1}^{j-1} (u_i^T x_j) u_i
+	\end{equation}
+
+	here $(u_i^T x_j)$ is the least squares weight for $u_i$. 
+
+	\begin{equation}
+	u_j = 
+	\begin{cases}
+	\frac{x'_j}{\norm{x'_j}}_2 & x'_j \neq 0 \\
+	0 & x'_j = 0
+	\end{cases}
+	\end{equation}
+
+
+\end{enumerate}
 
 \section{Least Squares Classification}
 We are given a training sample $\{x_i, y_i \}_{i=1}^n$, $x_i \in \R^p$ and $y\in \R$ (or $y \in \{+1,-1\}$).

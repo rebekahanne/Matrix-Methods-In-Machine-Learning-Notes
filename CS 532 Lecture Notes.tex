@@ -597,5 +597,79 @@ The steps to complete least squares classification in this environment are as fo
 	 \end{align*}
 \end{enumerate}
 
-\subsection{Regularization}
+\section{Tikhonov Regularization/Ridge Regression}
+We are given $X \in \R^{n \times p}$ ($n$ training samples, $p$ features) and $y \in \R^n$ ($n$ labels). Our model is $y \approx Xw$, which means $y_i \approx x_i^T w$ for some $w \in \R^p$. 
+
+The LS problem is
+\begin{equation}
+	\hat w_{LS} = \argmin_w \norm{y - Xw}^2_2  = \argmin_w \sum_{i=1}^n (y_i - x^T_i w)^2
+\end{equation}
+There are two cases
+\begin{enumerate}
+	\item If $X$ is full rank (i.e. the columns of $X$ are linearly independent), then $\hat w_{LS}$ is unique and 
+	\begin{equation}
+		\hat w_{LS} = (X^T X)^{-1} X^T y
+	\end{equation}
+	\item If $X$ is not full rank, then $X^T X$ is not invertible. $\hat w_{LS}$ is not unique; there are infinitely many solutions. 
+\end{enumerate}
+
+\subsection{Tikhonov Regularization Derivation}
+In this second case, we can define a new objective
+\begin{equation}
+	\hat w = \argmin_w \norm{y - Xw}^2_2 + \lambda \norm{w}^2_2
+\end{equation}
+where $\norm{y - Xw}^2_2$ measures the fit to the data, $\lambda > 0$ is a regularization parameter or tuning parameter, and $\norm{w}^2_2$ is a regularizer. $\norm{w}^2_2$ measures the energy in $w$. 
+
+Observations about this problem:
+\begin{enumerate}
+	\item $\hat w$ is unique even when no unique least square solution exists
+	\item Even when $X$ is full rank, $X^T X$ can be badly behaved, and regularization adjusts for this. 
+\end{enumerate}
+
+\subsubsection{Derivation with Vector Calculus}
+Let $f(w) = \norm{y - Xw}^2_2 + \lambda \norm{w}^2_2$. Then
+\begin{align*}
+	f(w) &= y^Ty - 2w^T X^T y + w^T X^T X w + \lambda w^T w \\
+	&= y^T y - 2 w^T X^T y + w^T (X^T X + \lambda I) w
+\end{align*}
+Then
+\begin{equation}
+	\nabla_w f(w) = -2X^Ty + 2(X^TX + \lambda I)
+\end{equation}
+If $(X^TX + \lambda I)$ is invertible, then $\hat w = (X^TX + \lambda I)^{-1}X^T y$. BUT, $(X^TX + \lambda I)$ is \textit{always} invertible. Recall that if a matrix is positive definite, then it is invertible. We can show that  $(X^TX + \lambda I)$ is indeed positive definite and hence invertible. To see this, fix $0 \neq a \in \R^n$, then 
+\begin{align*}
+	a^T (X^TX + \lambda I) a &= a^T X^T X a + \lambda a^T a \\
+	&= \norm{Xa}^2_2 + \lambda \norm{a}^2_2 
+\end{align*}
+Now note that $\norm{Xa}^2_2 \geq 0$ (it could be $0$ if $X$ is not full rank and $a$ is in the null space of $X$ -- this is what causes troubles with LS) but $\lambda \norm{a}^2_2 > 0$. Therefore,$(X^TX + \lambda I)$ is positive definite. 
+
+\subsubsection{Alternative Derivation}
+Note that for vectors $a, b$, 
+\begin{equation}
+	\norm{a}^2_2 + \norm{b}^2_2 = \norm{\begin{bmatrix} a \\ b \end{bmatrix}}^2_2
+\end{equation}
+Therefore, 
+\begin{align*}
+	f(w) &= \norm{y - Xw}^2_2 + \lambda \norm{w}^2_2 \\
+	&= \norm{y - Xw}^2_2 + \norm{\sqrt{\lambda} w}^2_2 \\
+	&= \norm{\begin{bmatrix} y - Xw \\ \sqrt{\lambda}w \end{bmatrix}}^2_2 \\
+	&= \norm{\begin{bmatrix} y \\ 0 \end{bmatrix} - \begin{bmatrix} Xw \\ \sqrt{\lambda}w \end{bmatrix}}^2_2 \\
+	&= \norm{\begin{bmatrix} y \\ 0 \end{bmatrix} - \begin{bmatrix} X \\ \sqrt{\lambda}I \end{bmatrix} w}^2_2 \\
+	&= \norm{\tilde{y} - \tilde{X}w}^2_2
+\end{align*}
+We can solve this problem with LS, so that
+\begin{equation}
+	\hat w = (\tilde{X}^T \tilde{X})^{-1} \tilde{X} \tilde{y}
+\end{equation}
+where
+\begin{equation}
+	\tilde{X}^T \tilde{X} = X^TX + \lambda I
+\end{equation}
+and
+\begin{equation}
+	\tilde{X} \tilde{y} = X^Ty
+\end{equation}
+Thus this is equivalent to the derivation above. 
+
+\section{Singular Value Decomposition}
 \end{document}

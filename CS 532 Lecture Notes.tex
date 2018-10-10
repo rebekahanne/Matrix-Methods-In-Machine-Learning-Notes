@@ -329,7 +329,7 @@ We know $\hat r = y - X \hat w$ is orthogonal to the span of the columns of $X$.
 
 Observations:
 \begin{itemize}
-	\item The question we're trying to answer: What is the point in $X$ that has the shortest distance to $y$? In $\R^2$, what are the weights $\beta_1$ and $\beta_2$ such that $\beta_1 x_1 + \beta_2 x_2$ has the shortest distance to $y$?
+	\item The question we're trying to answer: What is the point in $col(X)$ that has the shortest distance to $y$? In $\R^2$, what are the weights $\beta_1$ and $\beta_2$ such that $\beta_1 x_1 + \beta_2 x_2$ has the shortest distance to $y$?
 	\item $col X$ is the space of all vectors that can be written as $\alpha x_1 + \beta x_2$ for some $\alpha, \beta \in \R$, that is the span of the columns of $X$. $y$ may not lie in this space. 
 	\item The residual vector will form a right angle with $col X$, because any other angle would correspond to a longer distance. 
 \end{itemize}
@@ -540,8 +540,85 @@ How can we take $X$ and get an orthonormal basis $U$?
 	\end{cases}
 	\end{equation}
 
-
 \end{enumerate}
+
+Next, by construction, each column of $U$, $u_i$, is in $span(\{x_1, \ldots, x_p\})$. Therefore we can write
+\begin{equation}
+	u_i = \alpha_{i1}x_1 + \alpha_{i2}x_2 + \cdots + \alpha_{ip}x_p
+\end{equation}
+where the $\alpha_{ij} \in \R$. We can write this in matrix form as
+\begin{equation}
+	U = X A
+\end{equation}
+where $X$ is $n \times p$ and $A$ is $p \times r$, and the $i$th column of $A$ is
+\begin{equation}
+	a_i = 
+	\begin{bmatrix}
+	\alpha_{i1} \\
+	\alpha_{i2} \\
+	\vdots \\
+	\alpha_{ip}
+	\end{bmatrix}
+\end{equation}
+Thus, $u_i = Xa_i$. 
+
+Now, suppose $w \in \R^p$ is the vector of weights we found using LS, and as above, $v$ is our vector of weights founding using LS with an orthonormal basis matrix. We have two equations for the predicated label $\hat y$
+\begin{align*}
+	\hat y &= w_1 x_2 + w_2 x_2 + \cdots + w_p x_p \\
+		   &= v_1 u_1 + v_2 u_2 + \cdots + v_r u_r \\
+		   &= v_1 X a_1 + v_2 X a_2 + \cdots + v_r X a_r \\
+		   &= v_1 (\alpha_{11}x_1 + \alpha_{12}x_2 + \cdots + \alpha_{1p} x_p) \\
+		   &\qquad \vdots \\
+		   &\quad + v_r (\alpha_{r1}x_1 + \alpha_{r2}x_2 + \cdots + \alpha_{rp} x_p) \\
+		   &= x_1 (v_1 \alpha_{11} + \cdots + v_r \alpha_{r1}) \\
+		   &\qquad \vdots \\
+		   &\quad + x_p (v_1 \alpha_{1p} + \cdots + v_r \alpha_{rp})
+\end{align*}
+
+Notice that 
+\begin{align*}
+w_1 &= v_1 \alpha_{11} + \cdots + v_r \alpha_{r1} \\
+&\qquad \vdots \\
+w_p &= v_1 \alpha_{1p} + \cdots + v_r \alpha_{rp}
+\end{align*}
+
+Therefore
+\begin{equation}
+	\hat y = XAv = Xw
+\end{equation}
+so that $Av = w$.
+
+In sum, given a new sample $x_{new} \in \R^p$, we have two ways to predict label $y_{new}$:
+\begin{enumerate}
+	\item $\hat y_{new} = \inp{x_{new}}{w}$
+	\item Using an orthonormal basis $U$, we know that $U = XA$. Therefore, $u_{new}^T = x_{new}^T A$. Equivalently, $u_{new} = A x_{new}$. Then $y_{new} = \inp{u_{new}}{v}$. 
+\end{enumerate}
+
+If the columns of $X$ are linearly independent ($r = p$), we can calculate using LS (recalling $u_i = X a_i$)
+\begin{equation}
+	a_i = (X^T X)^{-1} X^T u_i
+\end{equation}
+
+\begin{theorem}
+Let $X \in \R^{n \times p}$, $n\geq p$, be full rank (the $p$ columns of $X$ are linearly independent) and $y \in \R^n$. Let $u_1, \ldots, u_p$ be orthonormal basis vectors such that $span(\{x_1, \ldots, x_p\}) = span(\{u_1, \ldots, u_p \})$. Then $\hat y = X \hat w$ where $\hat w = \argmin_w \norm{y - Xw}_2^2$ is given by $\hat y = UU^T y$, where $U = \begin{bmatrix} u_1 &u_2 & \hdots & u_p \end{bmatrix}$.
+\end{theorem}
+\begin{proof}
+\begin{equation}
+	\hat y = X \hat w = X (X^T X)^{-1} X^T y
+\end{equation}
+where $P_x = X (X^T X)^{-1} X^T$ is a projection matrix. Since $span(\{x_1, \ldots, x_p\}) = span(\{u_1, \ldots, u_p \})$, we must have that 
+\begin{equation}
+	P_x y = P_u y
+\end{equation}
+which implies $P_x = P_u$. Thus
+\begin{equation}
+	P_x = P_u = U (U^T U)^{-1} U^T = U U^T
+\end{equation}
+Finally
+\begin{equation}
+	\hat y = P_x y = P_u y = UU^T y
+\end{equation}
+\end{proof}
 
 \section{Least Squares Classification}
 We are given a training sample $\{x_i, y_i \}_{i=1}^n$, $x_i \in \R^p$ and $y\in \R$ (or $y \in \{+1,-1\}$).
@@ -595,6 +672,8 @@ The steps to complete least squares classification in this environment are as fo
 	 \hat{y} &= Xw \\
 	 &= X (X^T X)^{-1} X^T y
 	 \end{align*}
+
+	 \item Validate with test/hold out data
 \end{enumerate}
 
 \section{Tikhonov Regularization/Ridge Regression}
@@ -614,7 +693,7 @@ There are two cases
 \end{enumerate}
 
 \subsection{Tikhonov Regularization Derivation}
-In this second case, we can define a new objective
+In this second case (and it can also be useful in the first), we can define a new objective
 \begin{equation}
 	\hat w = \argmin_w \norm{y - Xw}^2_2 + \lambda \norm{w}^2_2
 \end{equation}

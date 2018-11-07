@@ -56,13 +56,16 @@
 \usepackage{float}
 \usepackage{indentfirst}
 
+\usepackage{mathrsfs}
+\usepackage{algpseudocode,algorithm,algorithmicx}
 \algnewcommand\algorithmicforeach{\textbf{for each}}
 \algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicdo}
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
 
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
-%\graphicspath{{./Simulation_Graphs/}}
+\graphicspath{{./figures/}}
 
 \usepackage{listings}
 \usepackage{subcaption} 
@@ -751,5 +754,156 @@ and
 Thus this is equivalent to the derivation above. 
 
 \section{Singular Value Decomposition}
+\begin{theorem}
+	Every matrix $X \in \R^{n \times p}$ can be factorized as 
+	\begin{equation}
+		X = U\Sigma V^T
+	\end{equation}
+	where
+	\begin{enumerate}
+		\item $U \in \R^{n \times n}$ is orthogonal ($U^TU = UU^T = I$) are the left singular vectors of $X$
+		\item $\Sigma \in \R^{n \times p}$ is diagonal and contains the singular values of $X$
+		\item $V \in \R^{p \times p}$ is orthogonal ($V^T V = VV^T = I$) and contains the right singular vectors of $X$
+	\end{enumerate}
+\end{theorem}
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.5]{svd.png}
+	\end{center}
+	\caption{SVD}
+\end{figure}
+
+
+\subsection{Interpretation of SVD}
+\begin{enumerate}
+	\item $U$ is an orthonormal basis for the columns of $X$
+	\item $\Sigma V^T$ are the basis coefficients
+\end{enumerate}
+
+
+\begin{example}(Netflix)
+	Let $X \in \R^{n \times p}$ be a matrix (full rank) where the columns are taste profiles of customers and the rows are single movie ratings across customers. 
+	\begin{enumerate}
+		\item The $i$th column of $U$ is a basis vector in $\R^n$ and is the $i$th representative customer taste profile (i.e.\ vector of normalized movie ratings). 
+		\item The $j$th column of $V^T$ (the $j$th row of $V$) is the relative importance of each representative taste profile to predicting customer $j$'s preferences.
+		\item The $i$th row of $V^T$ (the $i$th column of $V$) is the vector of users' affinities to the $i$th representative profile. 
+	\end{enumerate}
+\end{example}
+
+\subsection{Low-Rank Approximation}
+
+\begin{theorem}(Subspace Approximation)
+	If $X \in \R^{p \times n}$ has rank $r > k$, then 
+	\begin{equation}
+		\min_{Z \ : \ rank(Z)=k} \norm{X - Z}^2_F
+	\end{equation}
+	is given by $Z = X_k = U_k \Sigma_k V_k^T$ and
+	\begin{equation}
+		\norm{X - X_k}^2_F = \sum_{i=k+1}^r \sigma^2_i
+	\end{equation}
+\end{theorem}
+
+\section{Power Iteration and Page Rank}
+
+\subsection{SVD: Connection to Eigenvalues/vectors}
+Suppose $X = U \Sigma V^T \in \R^{p \times n}$. Then
+\begin{align*}
+	A &:= X^T X \\
+	&= V \Sigma U^T U \Sigma V^T \\
+	&= V \Sigma^2 V^T \\
+	&= V \Lambda V^T
+\end{align*}
+Thus $V$ is a matrix of the eigenvectors of $A$ and $\Lambda = \Sigma^2$ contains its eigenvalues. 
+
+
+Power iteration gives a method to find the $1$st right singular vector. 
+
+
+
+\section{Iterative Solvers}
+Let $\tau > 0$ be step size.
+\subsection{Gradient Descent/Landweber Iteration}
+\begin{algorithm}
+  \caption{Landweber Iteration}
+  \begin{algorithmic}[ht]
+    \Require{$\bm w^{(0)}$}
+    \For{$k \gets 0, 1, \ldots$}
+    	\Let{$\bm w^{(k+1)}$}{$w^{(k)} - \tau X^T(Xw^{(k)} - y)$}
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+This algorithm takes a step in the direction of negative gradient of each iteration of the objective function $f(w) = \norm{Xw - y}^2_2$. Notice that
+\begin{align*}
+	f(w)  &= \norm{Xw -y}^2_2 \\
+	\nabla_w f(w) &= \nabla_w \quad (Xw -y)^T (Xw -y) \\
+	&= \nabla_w \quad w^T X^T X y - 2w^T X^T y + y^T y \\
+	&= 2X^T X w - 2X^T y \\
+	&= 2X^T(Xw -y)
+\end{align*}
+
+Thus the new iterate equals the old iterate plus a step in direction of negative gradient.
+
+\begin{claim}(Convergence of Landweber Iteration)
+
+\end{claim}
+\begin{proof}
+We want to show that
+\begin{equation}
+	\norm{Xw^{(k+1)} - y}^2_2 \leq \norm{Xw^{(k)} - y}^2_2
+\end{equation}
+Recall that the iteration is given by $w^{(k+1)} = w^{(k)} - \tau X^T(Xw^{(k)} - y)$. Then
+\begin{align*}
+	\norm{Xw^{(k+1)} - y}^2_2 &= \norm{X(w^{(k)} - \tau X^T(Xw^{(k)} - y)) - y}^2_2 \\
+	&= \norm{Xw^{(k)} - y - \tau XX^T(Xw^{(k)} - y)}^2_2 \\
+	&= \norm{Xw^{(k)} - y}^2_2 + \tau^2 \norm{XX^T(Xw^{(k)} - y)}^2_2 - 2\tau(Xw^{(k)} - y)^T X X^T (Xw^{(k)} - y) \\
+\end{align*}
+Now observe that
+\begin{equation}
+	\norm{XX^T(Xw^{(k)} - y)}^2_2 \leq \norm{X}^2_{op} \norm{X^T(Xw^{(k)} - y)}^2_2
+\end{equation}
+Therefore 
+\begin{align*}
+	\norm{Xw^{(k+1)} - y}^2_2 &\leq \norm{Xw^{(k)} - y}^2_2 + \tau\left(\tau \norm{X}^2_{op} \norm{X^T(Xw^{(k)} - y)}^2_2 - 2 \norm{X^T(Xw^{(k)} - y)}^2_2\right) \\
+	&= \norm{Xw^{(k)} - y}^2_2 + \tau \norm{X^T(Xw^{(k)} - y)}^2_2(\tau \norm{X}^2_{op} - 2) \\
+\end{align*}
+Thus, if $(\tau \norm{X}^2_{op} - 2) < 0$, then $\norm{Xw^{(k+1)} - y}^2_2 \leq \norm{Xw^{(k)} - y}^2_2$. Therefore, for convergence we require that
+\begin{equation}
+	0 < \tau < \frac{2}{\norm{X}^2_{op}}
+\end{equation}
+in order to ensure convergence. Under this condition, then
+\begin{equation}
+	w^{(k)} \to (X^T X)^{-1}X^T y
+\end{equation}
+\end{proof}
+
+The above proof made use of the following claim.
+\begin{claim}(Bound on $2$-norm of matrix-vector product)
+Let $X$ be matrix and $w$ a vector (conformable). Then
+\begin{equation}
+	\norm{Xw}_{2} \leq \norm{X}_{op}\norm{w}_2
+\end{equation}
+\end{claim}
+\begin{proof}
+Recall: \textbf{The $2$-norm (here, operator norm) of a matrix is it's largest singular value.}
+\begin{equation}
+	\norm{X}_{op} = \norm{X}_2 = \sigma_{max}
+\end{equation}
+Suppose $X = U\Sigma V^T$. Then
+\begin{align*}
+	\norm{Xw}_2 &= \norm{U\Sigma V^T w}_2 \\
+	&= \norm{\Sigma V^T w}_2 \tag{$U$ orthonormal, preserves norms} \\
+	&= \left(\sum_i\left(\sigma_i (V^T w)_i \right)^2 \right)^{\frac{1}{2}} \\
+	&\leq \sigma_{max} \left(\sum_i(V^T w)^2_i \right)^{\frac{1}{2}} \\
+	&= \sigma_{max} \norm{V^T w}_2 \tag{definition of norm} \\
+	&= \sigma_{max} \norm{w}_2 \tag{$V, V^T$ orthonormal, preserves norms}
+\end{align*}
+\end{proof}
+
+\section{Regularized Regression}
+
+
+\section{LASSO (Least absolute selection and shrinkage operator)}
 
 \end{document}

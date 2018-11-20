@@ -816,10 +816,26 @@ Suppose $X = U \Sigma V^T \in \R^{p \times n}$. Then
 \end{align*}
 Thus $V$ is a matrix of the eigenvectors of $A$ and $\Lambda = \Sigma^2$ contains its eigenvalues. 
 
-
 Power iteration gives a method to find the $1$st right singular vector. 
 
-
+\section{Matrix Completion}
+\subsection{Iterative Singular Value Thresholding}
+\begin{algorithm}
+  \caption{Iterative Singular Value Thresholding}
+  \begin{algorithmic}[ht]
+    \Require{$\hat X = zeros(n,p)$}
+    \Require{$\hat X_{\Omega} = X_{\Omega}$} \Comment{fill in obs.\ entries}
+	\Require{Threshold or $r$} 
+    \For{$k \gets 0, 1, \ldots$}
+    	\Let{$[U,S,V]$}{$svd(\hat X)$}
+    	\Let{$\hat S $}{$S \geq \text{threshold}$} \Comment{if threshold, keep sing vals $\geq$}
+    	\Let{$\hat S $}{$S(1:r,1:r)$} \Comment{if rank, keep $r$ sing vals}
+    	\Let{$\hat X $}{$U \hat S V^T$}
+    	\Let{$\hat X_{\Omega}$}{$X_{\Omega}$} \Comment{fill in obs.\ entries} \\
+    	If converged: $\norm{\hat X - \hat X_{old}} < \e$, stop.
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
 
 \section{Iterative Solvers}
 Let $\tau > 0$ be step size.
@@ -903,7 +919,157 @@ Suppose $X = U\Sigma V^T$. Then
 
 \section{Regularized Regression}
 
+\subsection{Proximal Gradient Algorithm}
+\begin{algorithm}
+  \caption{Proximal Gradient Algorithm: $\argmin_w \norm{y - Xw}^2_2 + \lambda r(w)$}
+  \begin{algorithmic}[H]
+    \Require{Initial $\bm w^{(0)}$}
+    \For{$k \gets 0, 1, \ldots$}
+    	\Let{$\bm z^{(k)}$}{$\bm w^{(k)} - \tau X^T(X\bm w^{(k)} - \bm y)$} \Comment{grad descent step}
+    	\Let{$\bm w^{(k+1)}$}{$\argmin_{\bm w} \norm{\bm z^{k} - \bm w}^2_2 + \lambda \tau r(\bm w)$} \Comment{regularization step}
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
 
-\section{LASSO (Least absolute selection and shrinkage operator)}
+\subsection{LASSO (Least absolute selection and shrinkage operator)}
+LASSO solve the following problem
+\begin{equation}
+	\hat w_L = \argmin_w \norm{w}_1 \text{ subject to } \norm{y - Xw} < \e
+\end{equation}
+which is equivalent to 
+\begin{equation}
+	\hat w_L = \argmin_w \norm{y - Xw}^2_2 + \lambda \norm{w}_1
+\end{equation}
+
+In the figure below, the rhombuses and circles show the locus of points for which the weight vector has a particular norm (in the $L_1$ and $L_2$ norms respectively). More precisely, they are $\{w : \norm{w}_1 = \tau_1\}$ and $\{w : \norm{w}_2 = \tau_2\}$. The red line is $\{w : y=Xw\}$.
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.35]{lasso_ridge.png}
+	\end{center}
+	\caption{Weight vector with Lasso vs Ridge Regression}
+\end{figure}
+
+
+\begin{example}($r(w) = \norm{w}_1 = \sum_{i} |w_i|$)
+\begin{align*}
+	\hat w &= \argmin_w \norm{z - w}^2_2 + \lambda \tau \norm{w}_1 \\
+	&= \argmin_w \sum_i \left((z_i - w_i)^2 + \lambda \tau |w_i| \right) \tag{separable}
+\end{align*}
+\end{example}
+Thus we can solve a problem for each $w_i$. 
+\begin{equation}
+	\hat w_i = \argmin_{w_i} (z_i - w_i)^2 + \lambda \tau |w_i|
+\end{equation}
+where $\lambda,\tau > 0$.
+\begin{enumerate}
+	\item Case 1: $z_i > 0$. Then $\hat w_i \geq 0$. Thus
+	\begin{align*}
+		\hat w_i &= \argmin_{w_i} (z_i - w_i)^2 + \lambda \tau w_i \\
+		\frac{d}{dw_i}(obj)&= -2(z_i - w_i) + \lambda\tau\\
+		w_i &= z_i - \frac{\lambda\tau}{2} 
+	\end{align*}
+	Thus
+	\begin{enumerate}
+		\item If $z_i >\frac{\lambda\tau}{2}$, then $\hat w_i = z_i - \frac{\lambda\tau}{2}$.
+		\item If $z_i <\frac{\lambda\tau}{2}$, then $\hat w_i = 0$.
+	\end{enumerate}
+	In sum
+	\begin{equation}
+		\hat w_i = \left(z_i - \frac{\lambda\tau}{2}\right)_+
+	\end{equation}
+	\item Case 2: $z_i < 0$. Then $\hat w_i \leq 0$. Similarly,
+	\begin{equation}
+		w_i = z_i + \frac{\lambda\tau}{2}
+	\end{equation}
+	Thus
+	\begin{enumerate}
+		\item If $z_i <-\frac{\lambda\tau}{2}$, then $\hat w_i = z_i \frac{\lambda\tau}{2}$.
+		\item If $z_i >-\frac{\lambda\tau}{2}$, then $\hat w_i = 0$.
+	\end{enumerate}
+	In sum
+	\begin{equation}
+		\hat w_i = - \left(|z_i| - \frac{\lambda\tau}{2}\right)_+
+	\end{equation}
+\end{enumerate}
+We can combine these two cases to get that
+\begin{equation}
+	\hat w_i = - \left(|z_i| - \frac{\lambda\tau}{2}\right)_+ sign(z_i)
+\end{equation}
+we we call the SoftThreshold$(z_i,\frac{\lambda\tau}{2})$. The figure below shows how $\hat w_i$ depends on $z_i$. 
+
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.5]{soft_thresh.png}
+	\end{center}
+	\caption{Soft Thresholding}
+\end{figure}
+
+\section{Convexity and Support Vector Machines}
+
+\subsection{Convexity}
+\begin{example}(Convex function lies above tangent lines)
+Suppose $l(w)$ is a convex function. Then informally, $l(w) \geq $ tangent and $w$. More formally,
+\begin{equation}
+	l(u) \geq l(w) + (u - w)^T \nabla l(w)
+\end{equation}
+\end{example}
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.4]{convex_tangent.png}
+	\end{center}
+	\caption{A convex function lies entirely above tangent lines}
+\end{figure}
+
+\begin{definition}(Subgradient)
+A subgradient $v$ of a convex function $l$ is as a vector satisfying
+\begin{equation}
+	l(u) \geq l(w) + (u - w)^T v
+\end{equation}
+\end{definition}
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.4]{subgrad.png}
+	\end{center}
+	\caption{Subgradients}
+\end{figure}
+
+\subsection{Support Vector Machines}
+
+When we use the classification rule $\hat y = sign(w^T x)$, our goal is thus to choose a $w$ such that $\hat y = sign(w^T x)$ as often as possible. However, when we use least squares we do \textit{not} actually minimize the number of mistakes. Minimizing the number of mistakes can be written as minimizing the following sum of indicator variables:
+\begin{equation}
+	\sum_{i=1}^n I_{y_i \neq sign(w^Tx_i)}
+\end{equation}
+LS actually minimizes
+\begin{equation}
+	\sum_{i=1}^n (y_i - w^T x_i)^2
+\end{equation}
+
+We want to choose a convex function that mimics the ideal loss. We will use hinge loss, which is defined by
+\begin{equation}
+	l(w) = \sum_{i=1}^n (1 - y_i x_i^T w)_+
+\end{equation}
+where
+\begin{equation}
+	(a)_+ = \begin{cases}
+	a & a > 0 \\
+	0 & \text{otherwise}
+	\end{cases}
+\end{equation}
+
+\begin{definition}(Support Vector Machine)
+	If we minimize
+	\begin{equation}
+		\sum_{i=1}^n (1 - y_i x_i^T w)_+ + \lambda\norm{w}^2_2
+	\end{equation}
+	this is called a support vector machine.
+\end{definition}
+
+In the figure below, the black line is the ideal loss function (not convex). The green line is the squared loss function (LS), the blue line is hinge loss, and the red line is log loss. 
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=.4]{loss_func.png}
+	\end{center}
+	\caption{Loss Functions}
+\end{figure}
 
 \end{document}
